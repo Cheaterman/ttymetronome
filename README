@@ -2,6 +2,6 @@ TTYMetronome
 
 Instructions :
 
-Execute compile.sh to compile the program, then ./metronome to start it up.
+Run compile.sh to compile the program, then ./metronome to start it.
 
 Have fun !

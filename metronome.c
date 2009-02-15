@@ -3,10 +3,17 @@
 int
 isalsa()
 {
-    if(system("which ossplay &> /dev/null"))
+    if(system("which ossplay &> /dev/null") && system("which aplay &> /dev/null")) // Ne trouve ni aplay ni ossplay
+        return -1;
+    else if(system("which ossplay &> /dev/null")) // Ne trouve pas ossplay
         return 1;
-    else
+    else if(system("which aplay &> /dev/null")) // Ne trouve pas aplay
         return 0;
+    else
+    {
+        printf("ALSA et OSS détectés : utilisation d'OSS par défaut.\n");
+        return 0;
+    }
 }
 
 
@@ -22,7 +29,7 @@ bip(int alsa,int beat)
     bip_pointer = sf_open(bip,SFM_READ,&bip_info);
     sf_read_float(bip_pointer,buffer,2048);
     sf_close(bip_pointer);*/
-    
+
     if(!alsa)
     {
         switch(beat)
@@ -31,7 +38,7 @@ bip(int alsa,int beat)
             default:    system("ossplay -q bip-low.wav &");    break;
         }
     }
-    else
+    else if(alsa == 1)
     {
         switch(beat)
         {
@@ -49,19 +56,24 @@ main_loop(struct timespec *frequence,int alsa)
 
     int i;
 
-    for(;;)
+    if(alsa != -1)
     {
-        for(i = 1 ; i <= 4 ; ++i)
+        for(;;)
         {
-            nanosleep(frequence, NULL);
-            bip(alsa,i);
+            for(i = 1 ; i <= 4 ; ++i)
+            {
+                nanosleep(frequence, NULL);
+                bip(alsa,i);
+            }
         }
-    }
+    } else
+        printf("Ce métronome a besoin d'aplay ou d'ossplay pour fonctionner.\n"
+               "(Solution avec fichier de configuration et lecteur personnalisé à venir...)\n");
     return;
 }
 
 int
-check_tempo(unsigned char tempo)
+check_tempo(unsigned int tempo)
 {
     if(tempo < 20 || tempo > 250)
         return 1;
@@ -70,11 +82,11 @@ check_tempo(unsigned char tempo)
 }
 
 void
-calc_freq(unsigned char tempo,struct timespec *frequence)
+calc_freq(unsigned int tempo,struct timespec *frequence)
 {
 
     double tempo_sec = (float)tempo / 60 , sec_par_beat = 1 / (float)tempo_sec;
-    
+
     if(sec_par_beat >= 1)
     {
         frequence->tv_sec = floor(sec_par_beat);
@@ -88,24 +100,25 @@ calc_freq(unsigned char tempo,struct timespec *frequence)
     return;
 }
 
-
 int
 main(int argc,char *argv[])
 {
-    
-    unsigned char tempo;
+
+    unsigned int tempo = 0;
     struct timespec frequence;
-    
-    do
+
+    if(argc >= 2)
+        if(!check_tempo((strtol(argv[1],NULL,10))))
+            tempo = strtol(argv[1],NULL,10);
+    while(check_tempo(tempo))
     {
         printf("Quel tempo ? (Minimum : 20, maximum : 250)\n");
         scanf("%u",&tempo);
         if(check_tempo(tempo))
             printf("Mauvais tempo. Saisissez un tempo compris entre 20 et 250.\n");
-    } while(check_tempo(tempo));
+    };
 
     calc_freq(tempo,&frequence);
-
     main_loop(&frequence,isalsa());
 
     return 0;
