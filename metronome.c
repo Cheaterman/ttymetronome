@@ -51,7 +51,7 @@ bip(int alsa,int beat)
 
 
 void
-main_loop(struct timespec *frequence,int alsa)
+main_loop(struct timespec *frequence,int alsa,int mesure)
 {
 
     int i;
@@ -60,7 +60,7 @@ main_loop(struct timespec *frequence,int alsa)
     {
         for(;;)
         {
-            for(i = 1 ; i <= 4 ; ++i)
+            for(i = 1 ; i <= mesure ; ++i)
             {
                 nanosleep(frequence, NULL);
                 bip(alsa,i);
@@ -76,6 +76,15 @@ int
 check_tempo(unsigned int tempo)
 {
     if(tempo < 20 || tempo > 250)
+        return 1;
+    else
+        return 0;
+}
+
+int
+check_mesure(unsigned int mesure)
+{
+    if(mesure < 2 || mesure > 4)
         return 1;
     else
         return 0;
@@ -104,22 +113,36 @@ int
 main(int argc,char *argv[])
 {
 
-    unsigned int tempo = 0;
+    unsigned int tempo = 0 , mesure = 0;
     struct timespec frequence;
 
     if(argc >= 2)
+    {
         if(!check_tempo((strtol(argv[1],NULL,10))))
             tempo = strtol(argv[1],NULL,10);
+        if(argc >= 3)
+            if(!check_mesure((strtol(argv[2],NULL,10))))
+                mesure = strtol(argv[2],NULL,10);
+    }
+
     while(check_tempo(tempo))
     {
         printf("Quel tempo ? (Minimum : 20, maximum : 250)\n");
         scanf("%u",&tempo);
         if(check_tempo(tempo))
             printf("Mauvais tempo. Saisissez un tempo compris entre 20 et 250.\n");
-    };
+    }
+
+    while(check_mesure(mesure))
+    {
+        printf("Mesures à combien de temps ? (2-4)\n");
+        scanf("%u",&mesure);
+        if(check_mesure(mesure))
+            printf("Mauvais nombre de temps par mesure. Saisissez un nombre de temps par mesure compris entre 2 et 4.\n");
+    }
 
     calc_freq(tempo,&frequence);
-    main_loop(&frequence,isalsa());
+    main_loop(&frequence,isalsa(),mesure);
 
     return 0;
 }
