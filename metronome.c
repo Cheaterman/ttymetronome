@@ -1,81 +1,83 @@
 #include "metronome.h"
 
-int
-isalsa()
-{
-    if(system("which ossplay &> /dev/null") && system("which aplay &> /dev/null")) // Ne trouve ni aplay ni ossplay
-        return -1;
-    else if(system("which ossplay &> /dev/null")) // Ne trouve pas ossplay
-        return 1;
-    else if(system("which aplay &> /dev/null")) // Ne trouve pas aplay
-        return 0;
-    else
-    {
-        printf("ALSA et OSS détectés : utilisation d'OSS par défaut.\n");
-        return 0;
-    }
-}
-
-
 void
-bip(int alsa,int beat)
-{
-
-/*    float buffer[2048];
-    SNDFILE *bip_pointer;
-    SF_INFO bip_info;
-    char bip[] = "bip.wav";
-
-    bip_pointer = sf_open(bip,SFM_READ,&bip_info);
-    sf_read_float(bip_pointer,buffer,2048);
-    sf_close(bip_pointer);*/
-
-    if(!alsa)
-    {
-        switch(beat)
-        {
-            case 1:    system("ossplay -q bip.wav &");    break;
-            default:    system("ossplay -q bip-low.wav &");    break;
-        }
-    }
-    else if(alsa == 1)
-    {
-        switch(beat)
-        {
-            case 1:    system("aplay -q bip.wav &");    break;
-            default:    system("aplay -q bip-low.wav &");   break;
-        }
-    }
-    return;
-}
-
-
-void
-main_loop(struct timespec *frequence,int alsa,int mesure)
+main_loop(struct timespec *frequence,int mesure,ALint *tampon_high, ALint *tampon_low)
 {
 
     int i;
+    ALuint source;
+    alGenSources(1,&source);
 
-    if(alsa != -1)
+    if(mesure != 5)
     {
         for(;;)
         {
             for(i = 1 ; i <= mesure ; ++i)
             {
+                switch(i)
+                {
+                    case 1:    jouerSon(tampon_high,&source);
+                               break;
+                    default:    jouerSon(tampon_low,&source);
+                }
                 nanosleep(frequence, NULL);
-                bip(alsa,i);
+                stopSon(&source);
             }
         }
-    } else
-        printf("Ce métronome a besoin d'aplay ou d'ossplay pour fonctionner.\n"
-               "(Solution avec fichier de configuration et lecteur personnalisé à venir...)\n");
+    }
+    else
+    {
+        for(;;)
+        {
+            for(i = 1 ; i <= 8 ; ++i)
+            {
+                switch(i)
+                {
+                    case 1:    jouerSon(tampon_low,&source);
+                               nanosleep(frequence, NULL);
+                               stopSon(&source);
+                               break;
+                    case 2:    jouerSon(tampon_low,&source);
+                               nanosleep(frequence, NULL);
+                               stopSon(&source);
+                               break;
+                    case 3:    jouerSon(tampon_high,&source);
+                               nanosleep(frequence, NULL);
+                               stopSon(&source);
+                               break;
+                    case 4:    jouerSon(tampon_low,&source);
+                               nanosleep(frequence, NULL);
+                               stopSon(&source);
+                               break;
+                    case 5:    jouerSon(tampon_low,&source);
+                               nanosleep(frequence, NULL);
+                               stopSon(&source);
+                               break;
+                    case 6:    jouerSon(NULL,&source);
+                               nanosleep(frequence, NULL);
+                               stopSon(&source);
+                               break;
+                    case 7:    jouerSon(tampon_high,&source);
+                               nanosleep(frequence, NULL);
+                               stopSon(&source);
+                               break;
+                    case 8:    jouerSon(NULL,&source);
+                               nanosleep(frequence, NULL);
+                               stopSon(&source);
+                               break;
+                    default:    nanosleep(frequence, NULL);
+                }
+            }
+        }
+    }
+    
     return;
 }
 
 int
 check_tempo(unsigned int tempo)
 {
-    if(tempo < 20 || tempo > 250)
+    if(tempo < 20 || tempo > 5000)
         return 1;
     else
         return 0;
@@ -84,15 +86,18 @@ check_tempo(unsigned int tempo)
 int
 check_mesure(unsigned int mesure)
 {
-    if(mesure < 2 || mesure > 4)
+    if(mesure < 2 || mesure > 5)
         return 1;
     else
         return 0;
 }
 
 void
-calc_freq(unsigned int tempo,struct timespec *frequence)
+calc_freq(unsigned int tempo,struct timespec *frequence,int mesure)
 {
+
+    if(mesure == 5)
+        tempo *= 2;
 
     double tempo_sec = (float)tempo / 60 , sec_par_beat = 1 / (float)tempo_sec;
 
@@ -115,6 +120,7 @@ main(int argc,char *argv[])
 
     unsigned int tempo = 0 , mesure = 0;
     struct timespec frequence;
+    ALint tampon_high , tampon_low;
 
     if(argc >= 2)
     {
@@ -127,22 +133,30 @@ main(int argc,char *argv[])
 
     while(check_tempo(tempo))
     {
-        printf("Quel tempo ? (Minimum : 20, maximum : 250)\n");
+        printf("Quel tempo ? (Minimum : 20)\n");
         scanf("%u",&tempo);
         if(check_tempo(tempo))
-            printf("Mauvais tempo. Saisissez un tempo compris entre 20 et 250.\n");
+            printf("Mauvais tempo. Saisissez un tempo supérieur à 20.\n");
     }
 
     while(check_mesure(mesure))
     {
-        printf("Mesures à combien de temps ? (2-4)\n");
+        printf("Mesures à combien de temps ? (2-4, 5 mesure rythmée)\n");
         scanf("%u",&mesure);
         if(check_mesure(mesure))
-            printf("Mauvais nombre de temps par mesure. Saisissez un nombre de temps par mesure compris entre 2 et 4.\n");
+            printf("Mauvais nombre de temps par mesure. Saisissez un nombre de temps par mesure compris entre 2 et 4 (ou 5 pour une mesure rythmée).\n");
     }
 
-    calc_freq(tempo,&frequence);
-    main_loop(&frequence,isalsa(),mesure);
+    demar_al();
+
+    calc_freq(tempo,&frequence,mesure);
+    
+    chargerSon("bip.wav",&tampon_high);
+    chargerSon("bip-low.wav",&tampon_low);
+
+    main_loop(&frequence,mesure,&tampon_high,&tampon_low);
+
+    stop_al();
 
     return 0;
 }

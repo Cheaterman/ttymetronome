@@ -2,6 +2,7 @@ TTYMetronome
 
 Instructions :
 
-Run compile.sh to compile the program, then ./metronome to start it.
+Run make to compile the program, then ./metronome to start it.
+make clean removes the object files and the binary.
 
 Have fun !
