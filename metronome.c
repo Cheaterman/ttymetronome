@@ -1,7 +1,7 @@
 #include "metronome.h"
 
 void
-main_loop(struct timespec *frequence,int mesure,ALint *tampon_high, ALint *tampon_low)
+main_loop(struct timespec *frequency, int mesure, ALint *buffer_high, ALint *buffer_low)
 {
 
     int i;
@@ -16,12 +16,12 @@ main_loop(struct timespec *frequence,int mesure,ALint *tampon_high, ALint *tampo
             {
                 switch(i)
                 {
-                    case 1:    jouerSon(tampon_high,&source);
+                    case 1:    source_playbuffer(buffer_high,&source);
                                break;
-                    default:    jouerSon(tampon_low,&source);
+                    default:    source_playbuffer(buffer_low,&source);
                 }
-                nanosleep(frequence, NULL);
-                stopSon(&source);
+                nanosleep(frequency, NULL);
+                source_stop(&source);
             }
         }
     }
@@ -33,39 +33,39 @@ main_loop(struct timespec *frequence,int mesure,ALint *tampon_high, ALint *tampo
             {
                 switch(i)
                 {
-                    case 1:    jouerSon(tampon_low,&source);
-                               nanosleep(frequence, NULL);
-                               stopSon(&source);
+                    case 1:    source_playbuffer(buffer_low,&source);
+                               nanosleep(frequency, NULL);
+                               source_stop(&source);
                                break;
-                    case 2:    jouerSon(tampon_low,&source);
-                               nanosleep(frequence, NULL);
-                               stopSon(&source);
+                    case 2:    source_playbuffer(buffer_low,&source);
+                               nanosleep(frequency, NULL);
+                               source_stop(&source);
                                break;
-                    case 3:    jouerSon(tampon_high,&source);
-                               nanosleep(frequence, NULL);
-                               stopSon(&source);
+                    case 3:    source_playbuffer(buffer_high,&source);
+                               nanosleep(frequency, NULL);
+                               source_stop(&source);
                                break;
-                    case 4:    jouerSon(tampon_low,&source);
-                               nanosleep(frequence, NULL);
-                               stopSon(&source);
+                    case 4:    source_playbuffer(buffer_low,&source);
+                               nanosleep(frequency, NULL);
+                               source_stop(&source);
                                break;
-                    case 5:    jouerSon(tampon_low,&source);
-                               nanosleep(frequence, NULL);
-                               stopSon(&source);
+                    case 5:    source_playbuffer(buffer_low,&source);
+                               nanosleep(frequency, NULL);
+                               source_stop(&source);
                                break;
-                    case 6:    jouerSon(NULL,&source);
-                               nanosleep(frequence, NULL);
-                               stopSon(&source);
+                    case 6:    source_playbuffer(NULL,&source);
+                               nanosleep(frequency, NULL);
+                               source_stop(&source);
                                break;
-                    case 7:    jouerSon(tampon_high,&source);
-                               nanosleep(frequence, NULL);
-                               stopSon(&source);
+                    case 7:    source_playbuffer(buffer_high,&source);
+                               nanosleep(frequency, NULL);
+                               source_stop(&source);
                                break;
-                    case 8:    jouerSon(NULL,&source);
-                               nanosleep(frequence, NULL);
-                               stopSon(&source);
+                    case 8:    source_playbuffer(NULL,&source);
+                               nanosleep(frequency, NULL);
+                               source_stop(&source);
                                break;
-                    default:    nanosleep(frequence, NULL);
+                    default:    nanosleep(frequency, NULL);
                 }
             }
         }
@@ -93,7 +93,7 @@ check_mesure(unsigned int mesure)
 }
 
 void
-calc_freq(unsigned int tempo,struct timespec *frequence,int mesure)
+calc_freq(unsigned int tempo, struct timespec *frequency, int mesure)
 {
 
     if(mesure == 5)
@@ -103,24 +103,24 @@ calc_freq(unsigned int tempo,struct timespec *frequence,int mesure)
 
     if(sec_par_beat >= 1)
     {
-        frequence->tv_sec = floor(sec_par_beat);
-        frequence->tv_nsec = (sec_par_beat - frequence->tv_sec) * 1000000000;
+        frequency->tv_sec = floor(sec_par_beat);
+        frequency->tv_nsec = (sec_par_beat - frequency->tv_sec) * 1000000000;
     }
     else
     {
-        frequence->tv_sec = 0;
-        frequence->tv_nsec = sec_par_beat * 1000000000;
+        frequency->tv_sec = 0;
+        frequency->tv_nsec = sec_par_beat * 1000000000;
     }
     return;
 }
 
 int
-main(int argc,char *argv[])
+main(int argc, char *argv[])
 {
 
     unsigned int tempo = 0 , mesure = 0;
-    struct timespec frequence;
-    ALint tampon_high , tampon_low;
+    struct timespec frequency;
+    ALint buffer_high , buffer_low;
 
     if(argc >= 2)
     {
@@ -133,28 +133,28 @@ main(int argc,char *argv[])
 
     while(check_tempo(tempo))
     {
-        printf("Quel tempo ? (Minimum : 20)\n");
+        printf("What tempo ? (Minimum : 20)\n");
         scanf("%u",&tempo);
         if(check_tempo(tempo))
-            printf("Mauvais tempo. Saisissez un tempo supérieur à 20.\n");
+            printf("Bad tempo. Enter a tempo higher than 20.\n");
     }
 
     while(check_mesure(mesure))
     {
-        printf("Mesures à combien de temps ? (2-4, 5 mesure rythmée)\n");
+        printf("How many beats per mesure ? (2-4, 5 rythmic mesure)\n");
         scanf("%u",&mesure);
         if(check_mesure(mesure))
-            printf("Mauvais nombre de temps par mesure. Saisissez un nombre de temps par mesure compris entre 2 et 4 (ou 5 pour une mesure rythmée).\n");
+            printf("Bad amount of beats per mesure. Enter an amount of beats per mesure between 2 and 4 (or 5 for a rythmic mesure).\n");
     }
 
-    demar_al();
+    start_al();
 
-    calc_freq(tempo,&frequence,mesure);
+    calc_freq(tempo, &frequency,mesure);
     
-    chargerSon("bip.ogg",&tampon_high);
-    chargerSon("bip-low.ogg",&tampon_low);
+    buffer_load("beep.ogg",&buffer_high);
+    buffer_load("beep-low.ogg",&buffer_low);
 
-    main_loop(&frequence,mesure,&tampon_high,&tampon_low);
+    main_loop(&frequency,mesure,&buffer_high,&buffer_low);
 
     stop_al();
 

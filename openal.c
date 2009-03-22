@@ -1,18 +1,18 @@
 #include "metronome.h"
 
 int
-demar_al(void)
+start_al(void)
 {
-    ALCdevice* sortie = alcOpenDevice(NULL);
+    ALCdevice* output = alcOpenDevice(NULL);
     
-    if(!sortie)
+    if(!output)
         return 1;
     
-    ALCcontext* monde = alcCreateContext(sortie,NULL);
+    ALCcontext* world = alcCreateContext(output, NULL);
     
-    if(!monde)
+    if(!world)
         return 1;
-    if(!alcMakeContextCurrent(monde))
+    if(!alcMakeContextCurrent(world))
         return 1;
     
     return 0;
@@ -21,12 +21,12 @@ demar_al(void)
 void
 stop_al(void)
 {
-    ALCcontext* monde = alcGetCurrentContext();
-    ALCdevice* sortie = alcGetContextsDevice(monde);
+    ALCcontext* world = alcGetCurrentContext();
+    ALCdevice* output = alcGetContextsDevice(world);
     
     alcMakeContextCurrent(NULL);
-    alcDestroyContext(monde);
-    alcCloseDevice(sortie);
+    alcDestroyContext(world);
+    alcCloseDevice(output);
 
     return;
 }
