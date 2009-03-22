@@ -151,8 +151,8 @@ main(int argc,char *argv[])
 
     calc_freq(tempo,&frequence,mesure);
     
-    chargerSon("bip.wav",&tampon_high);
-    chargerSon("bip-low.wav",&tampon_low);
+    chargerSon("bip.ogg",&tampon_high);
+    chargerSon("bip-low.ogg",&tampon_low);
 
     main_loop(&frequence,mesure,&tampon_high,&tampon_low);
 
