@@ -53,15 +53,7 @@ main_loop(struct timespec *frequency, int mesure, ALint *buffer_high, ALint *buf
                                nanosleep(frequency, NULL);
                                source_stop(&source);
                                break;
-                    case 6:    source_playbuffer(NULL,&source);
-                               nanosleep(frequency, NULL);
-                               source_stop(&source);
-                               break;
                     case 7:    source_playbuffer(buffer_high,&source);
-                               nanosleep(frequency, NULL);
-                               source_stop(&source);
-                               break;
-                    case 8:    source_playbuffer(NULL,&source);
                                nanosleep(frequency, NULL);
                                source_stop(&source);
                                break;
